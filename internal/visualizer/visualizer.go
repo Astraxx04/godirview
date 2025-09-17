@@ -6,6 +6,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"github.com/fatih/color"
 )
 
 func Run(root string, depth int, showAll bool, jsonOut bool) error {
@@ -30,20 +31,35 @@ func printTree(path, prefix string, maxDepth int, showAll bool, level int) error
 			continue
 		}
 
-		connector := "├── "
-		nextPrefix := prefix + "│   "
+		connector := "├──"
 		if i == len(entries)-1 {
-			connector = "└── "
-			nextPrefix = prefix + "    "
+			connector = "└──"
 		}
 
-		fmt.Println(prefix + connector + entry.Name())
-
+		// Apply icon + color
+		icon := "📄"
+		name := color.WhiteString(entry.Name())
 		if entry.IsDir() {
-			subPath := filepath.Join(path, entry.Name())
-			printTree(subPath, nextPrefix, maxDepth, showAll, level+1)
+			icon = "📁"
+			name = color.BlueString(entry.Name())
+		}
+
+		fmt.Println(prefix + connector + " " + icon + " " + name)
+
+		// Recurse into subdirectory
+		if entry.IsDir() {
+			if maxDepth == -1 || level < maxDepth {
+				newPrefix := prefix + "│   "
+				if i == len(entries)-1 {
+					newPrefix = prefix + "    "
+				}
+				if err := printTree(filepath.Join(path, entry.Name()), newPrefix, maxDepth, showAll, level+1); err != nil {
+					return err
+				}
+			}
 		}
 	}
+
 	return nil
 }
 
